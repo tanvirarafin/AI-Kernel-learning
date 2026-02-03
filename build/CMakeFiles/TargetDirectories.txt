@@ -1,0 +1,3 @@
+/home/ammar/work/cutlass_learninig/build/CMakeFiles/my_kernel.dir
+/home/ammar/work/cutlass_learninig/build/CMakeFiles/edit_cache.dir
+/home/ammar/work/cutlass_learninig/build/CMakeFiles/rebuild_cache.dir
