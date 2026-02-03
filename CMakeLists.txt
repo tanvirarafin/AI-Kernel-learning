@@ -1,26 +1,84 @@
 cmake_minimum_required(VERSION 3.18)
-project(ModularKernels LANGUAGES CXX CUDA)
 
-# 1. Target your RTX 4060
-set(CMAKE_CUDA_ARCHITECTURES 89)
+project(CutlassLearning LANGUAGES CXX CUDA)
+
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CUDA_STANDARD 17)
 
-# 2. Define the path to the submodule
-set(CUTLASS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/cutlass")
+# Find CUDA
+find_package(CUDA REQUIRED)
 
-# 3. Add CUTLASS include directories (Header-only usage)
-add_library(cutlass_interface INTERFACE)
-target_include_directories(cutlass_interface INTERFACE 
-    ${CUTLASS_DIR}/include
-    ${CUTLASS_DIR}/tools/util/include
-    ${CUTLASS_DIR}/examples/common
+# Set CUDA architectures (sm_89 for Ada Lovelace RTX 40 series)
+set(CMAKE_CUDA_ARCHITECTURES "89")
+
+# Add CUTLASS as a submodule
+# Note: This assumes you've run `git submodule update --init --recursive`
+set(CUTLASS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cutlass)
+
+# Configure CUTLASS options before including it
+set(CUTLASS_NVCC_ARCHS_SUPPORTED "80;86;87;89;90")
+set(CUTLASS_LIBRARY_KERNELS "")
+set(BUILD_TOOLS OFF CACHE BOOL "Build CUTLASS tools")
+set(CUTLASS_UNITY_BUILD_ENABLED ON CACHE BOOL "Enable Unity/Jumbo builds")
+
+# Include CUTLASS
+if(EXISTS ${CUTLASS_DIR})
+    add_subdirectory(${CUTLASS_DIR} cutlass-build)
+else()
+    message(FATAL_ERROR "CUTLASS submodule not found. Please run: git submodule update --init --recursive")
+endif()
+
+# Common CUDA compiler flags
+set(COMMON_NVCC_FLAGS 
+    -arch=sm_89
+    -O3
+    -use_fast_math
+    -lineinfo
+    -DNDEBUG
 )
 
-# 4. Your executable
-add_executable(my_kernel main.cu)
-target_link_libraries(my_kernel PRIVATE cutlass_interface)
+# Function to create a module executable
+function(add_module NAME SOURCE_DIR)
+    set(SRC_FILE ${SOURCE_DIR}/main.cu)
+    
+    # Create executable
+    add_executable(${NAME} ${SRC_FILE})
+    
+    # Set CUDA properties
+    set_target_properties(${NAME} PROPERTIES
+        CUDA_SEPARABLE_COMPILATION ON
+        CUDA_RESOLVE_DEVICE_SYMBOLS ON
+    )
+    
+    # Add CUTLASS include directories
+    target_include_directories(${NAME} PRIVATE 
+        ${CUTLASS_DIR}/include
+        ${CUTLASS_DIR}/examples/common
+    )
+    
+    # Set NVCC flags
+    target_compile_options(${NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:${COMMON_NVCC_FLAGS}>)
+    
+    # Link against CUTLASS if needed
+    if(TARGET cutlass)
+        target_link_libraries(${NAME} PRIVATE cutlass)
+    endif()
+endfunction()
 
-# 5. Required flags for CUTLASS
-target_compile_options(my_kernel PRIVATE 
-    $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>
+# Add executables for each module
+add_module(module1 ${CMAKE_CURRENT_SOURCE_DIR}/module1)
+add_module(module2 ${CMAKE_CURRENT_SOURCE_DIR}/module2)
+add_module(module3 ${CMAKE_CURRENT_SOURCE_DIR}/module3)
+add_module(module4 ${CMAKE_CURRENT_SOURCE_DIR}/module4)
+
+# Additional modules can be added as they are implemented
+# add_module(module5 ${CMAKE_CURRENT_SOURCE_DIR}/module5)
+# add_module(module6 ${CMAKE_CURRENT_SOURCE_DIR}/module6)
+
+# Default target to build all modules
+add_custom_target(all_modules DEPENDS module1 module2 module3 module4)
+
+# Installation rules (optional)
+install(TARGETS module1
+    RUNTIME DESTINATION bin/modules
 )
