@@ -1,3 +1,0 @@
-/home/ammar/work/cutlass_learninig/module6/build/CMakeFiles/module6.dir
-/home/ammar/work/cutlass_learninig/module6/build/CMakeFiles/edit_cache.dir
-/home/ammar/work/cutlass_learninig/module6/build/CMakeFiles/rebuild_cache.dir
