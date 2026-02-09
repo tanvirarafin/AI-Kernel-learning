@@ -22,9 +22,9 @@ Deep dive into NVIDIA's premier CUDA C++ linear algebra library with 6 comprehen
 - **Module 1**: Layouts and Tensors - Foundation of composable abstractions
 - **Module 2**: Tiled Copy - Vectorized global-to-shared memory movement
 - **Module 3**: Tiled MMA - Tensor Core operations via CuTe atoms
-- **Module 4**: Fused Epilogues - Bias-add and activation function implementations
+- **Module 4**: Fused Bias-Add - Bias-add and activation function implementations
 - **Module 5**: Mainloop Pipelining - Temporal overlap and throughput optimization
-- **Module 6**: Advanced Fused Operations - Eliminating VRAM roundtrips
+- **Module 6**: Fused Epilogues - Eliminating VRAM roundtrips
 
 ### 3. CMake & Build Systems Mastery
 Complete build system expertise for GPU development:
@@ -33,20 +33,9 @@ Complete build system expertise for GPU development:
 - **Make Guide**: GNU Make for efficient project orchestration
 - **Hands-on Tutorials**: Practical exercises and step-by-step tutorials
 - **Reference Sheets**: Quick reference for commands, variables, and best practices
-- **Real-world Examples**: Complete project demonstrating CMake + Make integration
+- **Training Projects**: Complete examples demonstrating CMake + Make integration
 
-### 4. C++ Template Metaprogramming for GPU Computing
-10-module intensive program from fundamentals to advanced optimization:
-
-- **Modules 1-4**: C++ foundations, template fundamentals, metaprogramming basics, and advanced techniques
-- **Module 5**: CUDA and GPU programming fundamentals
-- **Module 6**: CUTLASS architecture and design principles
-- **Module 7**: CUTLASS template patterns and idioms
-- **Module 8**: Advanced customization techniques
-- **Module 9**: Real-world applications and case studies
-- **Module 10**: Performance optimization and profiling
-
-### 5. Data Structures & Algorithms for Systems Programming
+### 4. Data Structures & Algorithms for Systems Programming
 6-module foundational course essential for kernel development:
 
 - **Module 00**: Introduction to DSA & Big O notation
@@ -57,7 +46,7 @@ Complete build system expertise for GPU development:
 - **Module 05**: Trees - Hierarchical data structures
 - **Module 06**: Graphs - Complex relationship modeling
 
-### 6. GPU Data Structures & Algorithms (GPU-DSA)
+### 5. GPU Data Structures & Algorithms (GPU-DSA)
 Specialized algorithms optimized for GPU architectures:
 
 - **Parallel Reduction**: Tree-based and Warp Shuffle optimization
@@ -75,40 +64,67 @@ Specialized algorithms optimized for GPU architectures:
 - **Fused Layer Normalization**: Optimized GPU implementation
 - **Compressed Sparse Formats**: CSR and Blocked-Ellpack implementations
 
-### 7. Triton Programming for GPU Acceleration
+### 6. Triton Programming for GPU Acceleration
 Comprehensive 8-module curriculum for Triton programming, a domain-specific language for GPU programming with performance close to hand-written CUDA:
 
-- **Module 1**: Introduction to Triton and Basic Tensor Operations - Understanding GPU programming with Triton
-- **Module 2**: Memory Operations and Data Movement - Efficient memory loading and storing with coalesced access
-- **Module 3**: Basic Arithmetic and Element-wise Operations - Mathematical operations and element-wise computations
-- **Module 4**: Block Operations and Tiling Concepts - Working with 2D blocks and tiling strategies
-- **Module 5**: Matrix Multiplication Fundamentals - Implementing efficient matrix multiplication with tiling
-- **Module 6**: Advanced Memory Layouts and Optimizations - Memory coalescing and cache optimization techniques
-- **Module 7**: Reduction Operations - Parallel reduction operations like sum, max, and argmax
-- **Module 8**: Advanced Techniques and Best Practices - Performance profiling, numerical stability, and optimization strategies
+- **Module 1**: Basics - Introduction to Triton and Basic Tensor Operations
+- **Module 2**: Memory - Memory Operations and Data Movement
+- **Module 3**: Arithmetic - Basic Arithmetic and Element-wise Operations
+- **Module 4**: Blocks - Block Operations and Tiling Concepts
+- **Module 5**: Matrix Multiplication - Matrix Multiplication Fundamentals
+- **Module 6**: Advanced Memory - Advanced Memory Layouts and Optimizations
+- **Module 7**: Reductions - Reduction Operations
+- **Module 8**: Advanced Techniques - Advanced Techniques and Best Practices
 
-### 8. NCCL (NVIDIA Collective Communications Library)
-8-module learning path covering collective communications for multi-GPU and distributed computing:
+### 7. NCCL (NVIDIA Collective Communications Library)
+7-module learning path covering collective communications for multi-GPU and distributed computing:
 
-- **Module 1**: Introduction to NCCL - Concepts and Setup - Understanding NCCL fundamentals and environment setup
-- **Module 2**: Basic Collective Operations - AllReduce, Broadcast - Core operations for distributed training
-- **Module 3**: Advanced Collective Operations - Reduce, AllGather, Scatter - Expanding collective operation capabilities
-- **Module 4**: Multi-GPU Programming with NCCL - Implementing multi-GPU patterns and paradigms
-- **Module 5**: Multi-Node Communication - Distributed computing across multiple machines
-- **Module 6**: Performance Optimization - Tuning NCCL for maximum throughput and minimum latency
-- **Module 7**: Integration with Deep Learning Frameworks - Using NCCL with PyTorch, TensorFlow, and other frameworks
+- **Module 1**: Introduction to NCCL - Concepts and Setup
+- **Module 2**: Basic Collective Operations - AllReduce, Broadcast
+- **Module 3**: Advanced Collective Operations - Reduce, AllGather, Scatter
+- **Module 4**: Multi-GPU Programming with NCCL
+- **Module 5**: Multi-Node Communication
+- **Module 6**: Performance Optimization
+- **Module 7**: Integration with Deep Learning Frameworks
 
-### 9. GPU Kernel Profiling and Optimization
+### 8. GPU Kernel Profiling and Optimization
 8-module mastery course for identifying and optimizing GPU kernel bottlenecks:
 
-- **Module 1**: Introduction to GPU Computing and Profiling Concepts - Understanding GPU architecture and profiling fundamentals
-- **Module 2**: Setting Up Profiling Tools and Environment - Installing and configuring GPU profiling tools (Nsight Compute, Nsight Systems)
-- **Module 3**: Basic Profiling Techniques - Interpreting key GPU metrics and identifying basic bottlenecks
-- **Module 4**: Identifying Common Bottlenecks - Recognizing memory-bound, compute-bound, and other performance issues
-- **Module 5**: Memory Optimization Techniques - Coalesced access, shared memory usage, and memory hierarchy optimization
-- **Module 6**: Computational Optimization Strategies - Arithmetic intensity, loop optimization, and mathematical function optimization
-- **Module 7**: Advanced Profiling and Analysis - Complex profiling scenarios and advanced analysis techniques
-- **Module 8**: Real-world Case Studies and Practice - Applying optimization techniques to real-world kernels
+- **Module 1**: Introduction to GPU Computing and Profiling Concepts
+- **Module 2**: Setting Up Profiling Tools and Environment
+- **Module 3**: Basic Profiling Techniques
+- **Module 4**: Identifying Common Bottlenecks
+- **Module 5**: Memory Optimization Techniques
+- **Module 6**: Computational Optimization Strategies
+- **Module 7**: Advanced Profiling and Analysis
+- **Module 8**: Real-world Case Studies and Practice
+
+### 9. Concurrency & Parallel Programming
+Advanced concepts in concurrent and parallel programming for GPU computing:
+
+- Thread synchronization primitives
+- Lock-free data structures
+- Parallel algorithms and patterns
+- GPU-specific concurrency models
+
+### 10. PTX Assembly Programming
+Low-level GPU programming with NVIDIA's Parallel Thread Execution (PTX) assembly:
+
+- PTX instruction set architecture
+- Manual optimization techniques
+- Understanding compiler-generated code
+- Fine-grained control over GPU resources
+
+### 11. Template Meta-programming for GPU Computing
+10-module intensive program from fundamentals to advanced optimization:
+
+- **Modules 1-4**: C++ foundations, template fundamentals, metaprogramming basics, and advanced techniques
+- **Module 5**: CUDA and GPU programming fundamentals
+- **Module 6**: CUTLASS architecture and design principles
+- **Module 7**: CUTLASS template patterns and idioms
+- **Module 8**: Advanced customization techniques
+- **Module 9**: Real-world applications and case studies
+- **Module 10**: Performance optimization and profiling
 
 ## Target Hardware & Architecture
 
@@ -159,10 +175,10 @@ nvidia-smi
 ### Repository Setup
 ```bash
 # Clone the repository with submodules
-git clone --recursive https://github.com/[your-username]/cutlass_learning.git
-cd cutlass_learning
+git clone --recursive https://github.com/[your-username]/AI-Kernel-learning.git
+cd AI-Kernel-learning
 
-# Initialize submodules (contains CUTLASS library)
+# Initialize submodules (contains CUTLASS library and other dependencies)
 git submodule update --init --recursive
 ```
 
@@ -186,7 +202,7 @@ make -j$(nproc)
 
 #### CMake Learning Examples
 ```bash
-cd Cmake_tr/complete_example
+cd cmakeguide/training_projects
 mkdir build && cd build
 cmake ..
 make -j$(nproc)
@@ -236,13 +252,13 @@ nvcc -std=c++17 -arch=sm_89 --expt-relaxed-constexpr \
 ## Key Resources
 
 ### Internal Documentation
-- `COMPLETE_LEARNING_GUIDE.md` - Comprehensive roadmap for the entire curriculum
-- `HANDS_ON_IMPLEMENTATION_GUIDE.md` - Practical implementation strategies
-- `LEARNING_CHECKLIST.md` - Progress tracking and milestones
-- `LEARNING_PATH_SUMMARY.md` - Executive summary of the learning journey
-- `Triton/README.md` - Triton programming learning path and resources
-- `NCCL/NCCL-Learning-Path/README.md` - NCCL collective communications guide
-- `Profiling/GPU_Profiling_Mastery/README.md` - GPU profiling and optimization resources
+- `LEARNING_PATH.md` - Comprehensive roadmap for the entire curriculum
+- `cmakeguide/README.md` - CMake and build systems guide
+- `CuTE/README.md` - CuTE programming guide
+- `Cutlass3.x/README.md` - CUTLASS 3.x guide
+- `Triton/README.md` - Triton programming learning path
+- `NCCL/Module-01/README.md` - NCCL collective communications guide
+- `Profiling/README.md` - GPU profiling and optimization resources
 
 ### External References
 - [NVIDIA CUTLASS Documentation](https://github.com/NVIDIA/cutlass)
