@@ -1,0 +1,59 @@
+//
+// Kernel with reduced branch divergence
+// Demonstrates how to minimize divergent execution
+//
+
+.version 6.0
+.target sm_50
+.address_size 64
+
+.visible .entry convergent_kernel(
+    .param .u64 input_ptr,
+    .param .u64 output_ptr,
+    .param .u32 n
+) {
+    .reg .u32 %tid;
+    .reg .u32 %n_val;
+    .reg .u64 %input_addr, %output_addr;
+    .reg .u64 %input_idx_addr, %output_idx_addr;
+    .reg .pred %cond;
+    .reg .f32 %value;
+    .reg .f32 %odd_result, %even_result;
+    .reg .pred %even_cond;
+    
+    // Get thread ID
+    mov.u32 %tid, %tid.x;
+    
+    // Load parameters
+    ld.param.u32 %n_val, [n];
+    ld.param.u64 %input_addr, [input_ptr];
+    ld.param.u64 %output_addr, [output_ptr];
+    
+    // Calculate address for this thread
+    mul.wide.u32 %input_idx_addr, %tid, 4;  // 4 bytes per float
+    add.u64 %input_idx_addr, %input_addr, %input_idx_addr;
+    add.u64 %output_idx_addr, %output_addr, %input_idx_addr;
+    
+    // Bounds check
+    setp.lt.u32 %cond, %tid, %n_val;
+    
+    // Load value from input
+    @%cond ld.global.f32 %value, [%input_idx_addr];
+    
+    // Pre-compute both paths without branching
+    mul.f32 %odd_result, %value, 3.0;
+    add.f32 %odd_result, %odd_result, 5.0;
+    add.f32 %even_result, %value, 1.0;
+    
+    // Determine which result to use based on thread ID
+    and.b32 %even_cond, %tid, 1;
+    setp.eq.u32 %even_cond, %even_cond, 0;
+    
+    // Select result based on condition
+    selp.f32 %value, %even_result, %odd_result, %even_cond;
+    
+    // Store result
+    @%cond st.global.f32 [%output_idx_addr], %value;
+    
+    ret;
+}

@@ -1,0 +1,188 @@
+//
+// Kernel with register spilling issue
+// This kernel uses too many registers causing spills to local memory
+//
+
+.version 6.0
+.target sm_50
+.address_size 64
+
+.visible .entry spilling_kernel(
+    .param .u64 input_ptr,
+    .param .u64 output_ptr,
+    .param .u32 n
+) {
+    .reg .u32 %tid;
+    .reg .u32 %n_val;
+    .reg .u64 %input_addr, %output_addr;
+    .reg .u64 %input_idx_addr, %output_idx_addr;
+    .reg .pred %cond;
+    
+    // Use many registers to force spilling
+    .reg .f32 %r0, %r1, %r2, %r3, %r4, %r5, %r6, %r7;
+    .reg .f32 %r8, %r9, %r10, %r11, %r12, %r13, %r14, %r15;
+    .reg .f32 %r16, %r17, %r18, %r19, %r20, %r21, %r22, %r23;
+    .reg .f32 %r24, %r25, %r26, %r27, %r28, %r29, %r30, %r31;
+    .reg .f32 %r32, %r33, %r34, %r35, %r36, %r37, %r38, %r39;
+    .reg .f32 %r40, %r41, %r42, %r43, %r44, %r45, %r46, %r47;
+    .reg .f32 %r48, %r49, %r50, %r51, %r52, %r53, %r54, %r55;
+    .reg .f32 %r56, %r57, %r58, %r59, %r60, %r61, %r62, %r63;
+    
+    // Get thread ID
+    mov.u32 %tid, %tid.x;
+    
+    // Load parameters
+    ld.param.u32 %n_val, [n];
+    ld.param.u64 %input_addr, [input_ptr];
+    ld.param.u64 %output_addr, [output_ptr];
+    
+    // Calculate address for this thread
+    mul.wide.u32 %input_idx_addr, %tid, 4;  // 4 bytes per float
+    add.u64 %input_idx_addr, %input_addr, %input_idx_addr;
+    add.u64 %output_idx_addr, %output_addr, %input_idx_addr;
+    
+    // Bounds check
+    setp.lt.u32 %cond, %tid, %n_val;
+    
+    // Initialize many registers (this causes register pressure)
+    mov.f32 %r0, 0.0;
+    mov.f32 %r1, 1.0;
+    mov.f32 %r2, 2.0;
+    mov.f32 %r3, 3.0;
+    mov.f32 %r4, 4.0;
+    mov.f32 %r5, 5.0;
+    mov.f32 %r6, 6.0;
+    mov.f32 %r7, 7.0;
+    mov.f32 %r8, 8.0;
+    mov.f32 %r9, 9.0;
+    mov.f32 %r10, 10.0;
+    mov.f32 %r11, 11.0;
+    mov.f32 %r12, 12.0;
+    mov.f32 %r13, 13.0;
+    mov.f32 %r14, 14.0;
+    mov.f32 %r15, 15.0;
+    mov.f32 %r16, 16.0;
+    mov.f32 %r17, 17.0;
+    mov.f32 %r18, 18.0;
+    mov.f32 %r19, 19.0;
+    mov.f32 %r20, 20.0;
+    mov.f32 %r21, 21.0;
+    mov.f32 %r22, 22.0;
+    mov.f32 %r23, 23.0;
+    mov.f32 %r24, 24.0;
+    mov.f32 %r25, 25.0;
+    mov.f32 %r26, 26.0;
+    mov.f32 %r27, 27.0;
+    mov.f32 %r28, 28.0;
+    mov.f32 %r29, 29.0;
+    mov.f32 %r30, 30.0;
+    mov.f32 %r31, 31.0;
+    mov.f32 %r32, 32.0;
+    mov.f32 %r33, 33.0;
+    mov.f32 %r34, 34.0;
+    mov.f32 %r35, 35.0;
+    mov.f32 %r36, 36.0;
+    mov.f32 %r37, 37.0;
+    mov.f32 %r38, 38.0;
+    mov.f32 %r39, 39.0;
+    mov.f32 %r40, 40.0;
+    mov.f32 %r41, 41.0;
+    mov.f32 %r42, 42.0;
+    mov.f32 %r43, 43.0;
+    mov.f32 %r44, 44.0;
+    mov.f32 %r45, 45.0;
+    mov.f32 %r46, 46.0;
+    mov.f32 %r47, 47.0;
+    mov.f32 %r48, 48.0;
+    mov.f32 %r49, 49.0;
+    mov.f32 %r50, 50.0;
+    mov.f32 %r51, 51.0;
+    mov.f32 %r52, 52.0;
+    mov.f32 %r53, 53.0;
+    mov.f32 %r54, 54.0;
+    mov.f32 %r55, 55.0;
+    mov.f32 %r56, 56.0;
+    mov.f32 %r57, 57.0;
+    mov.f32 %r58, 58.0;
+    mov.f32 %r59, 59.0;
+    mov.f32 %r60, 60.0;
+    mov.f32 %r61, 61.0;
+    mov.f32 %r62, 62.0;
+    mov.f32 %r63, 63.0;
+    
+    // Perform computation using many registers
+    add.f32 %r0, %r0, %r1;
+    add.f32 %r1, %r1, %r2;
+    add.f32 %r2, %r2, %r3;
+    add.f32 %r3, %r3, %r4;
+    add.f32 %r4, %r4, %r5;
+    add.f32 %r5, %r5, %r6;
+    add.f32 %r6, %r6, %r7;
+    add.f32 %r7, %r7, %r8;
+    add.f32 %r8, %r8, %r9;
+    add.f32 %r9, %r9, %r10;
+    add.f32 %r10, %r10, %r11;
+    add.f32 %r11, %r11, %r12;
+    add.f32 %r12, %r12, %r13;
+    add.f32 %r13, %r13, %r14;
+    add.f32 %r14, %r14, %r15;
+    add.f32 %r15, %r15, %r16;
+    add.f32 %r16, %r16, %r17;
+    add.f32 %r17, %r17, %r18;
+    add.f32 %r18, %r18, %r19;
+    add.f32 %r19, %r19, %r20;
+    add.f32 %r20, %r20, %r21;
+    add.f32 %r21, %r21, %r22;
+    add.f32 %r22, %r22, %r23;
+    add.f32 %r23, %r23, %r24;
+    add.f32 %r24, %r24, %r25;
+    add.f32 %r25, %r25, %r26;
+    add.f32 %r26, %r26, %r27;
+    add.f32 %r27, %r27, %r28;
+    add.f32 %r28, %r28, %r29;
+    add.f32 %r29, %r29, %r30;
+    add.f32 %r30, %r30, %r31;
+    add.f32 %r31, %r31, %r32;
+    add.f32 %r32, %r32, %r33;
+    add.f32 %r33, %r33, %r34;
+    add.f32 %r34, %r34, %r35;
+    add.f32 %r35, %r35, %r36;
+    add.f32 %r36, %r36, %r37;
+    add.f32 %r37, %r37, %r38;
+    add.f32 %r38, %r38, %r39;
+    add.f32 %r39, %r39, %r40;
+    add.f32 %r40, %r40, %r41;
+    add.f32 %r41, %r41, %r42;
+    add.f32 %r42, %r42, %r43;
+    add.f32 %r43, %r43, %r44;
+    add.f32 %r44, %r44, %r45;
+    add.f32 %r45, %r45, %r46;
+    add.f32 %r46, %r46, %r47;
+    add.f32 %r47, %r47, %r48;
+    add.f32 %r48, %r48, %r49;
+    add.f32 %r49, %r49, %r50;
+    add.f32 %r50, %r50, %r51;
+    add.f32 %r51, %r51, %r52;
+    add.f32 %r52, %r52, %r53;
+    add.f32 %r53, %r53, %r54;
+    add.f32 %r54, %r54, %r55;
+    add.f32 %r55, %r55, %r56;
+    add.f32 %r56, %r56, %r57;
+    add.f32 %r57, %r57, %r58;
+    add.f32 %r58, %r58, %r59;
+    add.f32 %r59, %r59, %r60;
+    add.f32 %r60, %r60, %r61;
+    add.f32 %r61, %r61, %r62;
+    add.f32 %r62, %r62, %r63;
+    
+    // Load value from input
+    @%cond ld.global.f32 %r0, [%input_idx_addr];
+    
+    // Add computed value to input
+    add.f32 %r0, %r0, %r63;
+    
+    // Store result
+    @%cond st.global.f32 [%output_idx_addr], %r0;
+    
+    ret;
+}

@@ -1,0 +1,60 @@
+//
+// Warp-level primitives demonstration
+// Shows usage of shuffle and vote operations
+//
+
+.version 6.0
+.target sm_50
+.address_size 64
+
+.visible .entry warp_coop(
+    .param .u64 input_ptr,
+    .param .u64 output_ptr,
+    .param .u32 n
+) {
+    .reg .u32 %tid, %warp_id, %lane_id;
+    .reg .u32 %n_val;
+    .reg .u64 %input_addr, %output_addr;
+    .reg .u64 %input_idx_addr, %output_idx_addr;
+    .reg .pred %cond;
+    .reg .f32 %value, %broadcast_val;
+    .reg .pred %vote_result;
+    .reg .u32 %ballot_result;
+    
+    // Get thread ID and calculate warp/lane IDs
+    mov.u32 %tid, %tid.x;
+    and.b32 %warp_id, %tid, -32;  // Divide by 32
+    shr.b32 %warp_id, %warp_id, 5;
+    and.b32 %lane_id, %tid, 31;   // Modulo 32
+    
+    // Load parameters
+    ld.param.u32 %n_val, [n];
+    ld.param.u64 %input_addr, [input_ptr];
+    ld.param.u64 %output_addr, [output_ptr];
+    
+    // Calculate address for this thread
+    mul.wide.u32 %input_idx_addr, %tid, 4;  // 4 bytes per float
+    add.u64 %input_idx_addr, %input_addr, %input_idx_addr;
+    add.u64 %output_idx_addr, %output_addr, %input_idx_addr;
+    
+    // Bounds check
+    setp.lt.u32 %cond, %tid, %n_val;
+    
+    // Load value from input
+    @%cond ld.global.f32 %value, [%input_idx_addr];
+    
+    // Use shuffle to broadcast value from lane 0 to all lanes in warp
+    shfl.sync.idx.b32 %broadcast_val, %value, 0, 0x1f, 0x0;
+    
+    // Perform operation using broadcast value
+    add.f32 %value, %value, %broadcast_val;
+    
+    // Perform a vote operation (check if value > 10.0)
+    setp.gt.f32 %vote_result, %value, 10.0;
+    vote.any.sync.b32 %ballot_result, %vote_result, 0x1f, 0x0;
+    
+    // Store result
+    @%cond st.global.f32 [%output_idx_addr], %value;
+    
+    ret;
+}

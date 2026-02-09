@@ -1,0 +1,91 @@
+//
+// Custom sparse matrix-vector multiplication kernel
+// Optimized for sparse matrix operations
+//
+
+.version 6.0
+.target sm_70
+.address_size 64
+
+.visible .entry sparse_mv(
+    .param .u64 values_ptr,
+    .param .u64 col_indices_ptr,
+    .param .u64 row_offsets_ptr,
+    .param .u64 vector_ptr,
+    .param .u64 result_ptr,
+    .param .u32 num_rows
+) {
+    .reg .u32 %tid;
+    .reg .u32 %num_rows_val;
+    .reg .u64 %values_addr, %col_indices_addr, %row_offsets_addr;
+    .reg .u64 %vector_addr, %result_addr;
+    .reg .u64 %row_start_addr, %row_end_addr;
+    .reg .u32 %row_start, %row_end, %current_pos;
+    .reg .u32 %col_idx;
+    .reg .u64 %col_idx_addr, %vector_elem_addr;
+    .reg .f32 %value, %vector_elem, %partial_sum;
+    .reg .pred %cond, %elem_cond;
+    
+    // Get thread ID (each thread handles one row)
+    mov.u32 %tid, %tid.x;
+    
+    // Load parameters
+    ld.param.u32 %num_rows_val, [num_rows];
+    ld.param.u64 %values_addr, [values_ptr];
+    ld.param.u64 %col_indices_addr, [col_indices_ptr];
+    ld.param.u64 %row_offsets_addr, [row_offsets_ptr];
+    ld.param.u64 %vector_addr, [vector_ptr];
+    ld.param.u64 %result_addr, [result_ptr];
+    
+    // Bounds check
+    setp.lt.u32 %cond, %tid, %num_rows_val;
+    
+    // Get row start and end positions
+    mul.wide.u32 %row_start_addr, %tid, 4;  // sizeof(u32)
+    add.u64 %row_start_addr, %row_offsets_addr, %row_start_addr;
+    add.u64 %row_end_addr, %row_start_addr, 4;  // Next element
+    
+    @%cond ld.global.u32 %row_start, [%row_start_addr];
+    @%cond ld.global.u32 %row_end, [%row_end_addr];
+    
+    // Initialize partial sum
+    mov.f32 %partial_sum, 0.0;
+    
+    // Process all non-zero elements in this row
+    mov.u32 %current_pos, %row_start;
+    
+process_row:
+    setp.ge.u32 %elem_cond, %current_pos, %row_end;
+    @%elem_cond bra process_row_end;
+    
+    // Load value and column index
+    mul.wide.u32 %col_idx_addr, %current_pos, 4;  // sizeof(u32)
+    add.u64 %col_idx_addr, %col_indices_addr, %col_idx_addr;
+    ld.global.u32 %col_idx, [%col_idx_addr];
+    
+    // Load corresponding value
+    mul.wide.u32 %col_idx_addr, %current_pos, 4;  // sizeof(f32) for values
+    add.u64 %col_idx_addr, %values_addr, %col_idx_addr;
+    ld.global.f32 %value, [%col_idx_addr];
+    
+    // Load vector element
+    mul.wide.u32 %vector_elem_addr, %col_idx, 4;  // sizeof(f32)
+    add.u64 %vector_elem_addr, %vector_addr, %vector_elem_addr;
+    ld.global.f32 %vector_elem, [%vector_elem_addr];
+    
+    // Multiply and accumulate
+    mul.f32 %value, %value, %vector_elem;
+    add.f32 %partial_sum, %partial_sum, %value;
+    
+    // Move to next element in row
+    add.u32 %current_pos, %current_pos, 1;
+    bra process_row;
+    
+process_row_end:
+    // Store result
+    mul.wide.u32 %row_start_addr, %tid, 4;  // sizeof(f32)
+    add.u64 %row_start_addr, %result_addr, %row_start_addr;
+    @%cond st.global.f32 [%row_start_addr], %partial_sum;
+    
+    ret;
+}

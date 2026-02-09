@@ -1,0 +1,63 @@
+//
+// Custom memory access pattern kernel
+// Demonstrates optimized access for specific data layouts
+//
+
+.version 6.0
+.target sm_50
+.address_size 64
+
+.visible .entry custom_pattern(
+    .param .u64 input_ptr,
+    .param .u64 output_ptr,
+    .param .u32 n
+) {
+    .reg .u32 %tid, %block_id, %thread_in_block;
+    .reg .u32 %n_val;
+    .reg .u64 %input_addr, %output_addr;
+    .reg .u64 %input_idx_addr, %output_idx_addr;
+    .reg .pred %cond;
+    .reg .f32 %value1, %value2, %result;
+    .reg .u64 %input_addr2;
+    
+    // Get thread ID and calculate block/thread IDs
+    mov.u32 %tid, %tid.x;
+    mov.u32 %block_id, %ctaid.x;
+    mov.u32 %thread_in_block, %tid.x;
+    
+    // Load parameters
+    ld.param.u32 %n_val, [n];
+    ld.param.u64 %input_addr, [input_ptr];
+    ld.param.u64 %output_addr, [output_ptr];
+    
+    // Calculate address for this thread with custom pattern
+    // Access pattern: strided access with custom stride
+    .reg .u32 %stride;
+    mov.u32 %stride, 32;  // Custom stride for coalescing optimization
+    
+    mul.wide.u32 %input_idx_addr, %tid, %stride;
+    mul.wide.u32 %input_idx_addr, %input_idx_addr, 4;  // 4 bytes per float
+    add.u64 %input_idx_addr, %input_addr, %input_idx_addr;
+    
+    // Calculate second address for vectorized access
+    mov.u64 %input_addr2, %input_idx_addr;
+    add.u64 %input_addr2, %input_addr2, 4;  // Next element
+    
+    add.u64 %output_idx_addr, %output_addr, %input_idx_addr;
+    
+    // Bounds check
+    setp.lt.u32 %cond, %tid, %n_val;
+    
+    // Load two values for vectorized processing
+    @%cond ld.global.f32 %value1, [%input_idx_addr];
+    @%cond ld.global.f32 %value2, [%input_addr2];
+    
+    // Perform custom computation
+    add.f32 %result, %value1, %value2;
+    mul.f32 %result, %result, 2.0;
+    
+    // Store result
+    @%cond st.global.f32 [%output_idx_addr], %result;
+    
+    ret;
+}

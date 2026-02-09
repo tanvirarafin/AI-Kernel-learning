@@ -1,0 +1,78 @@
+//
+// ILP-optimized kernel
+// Demonstrates interleaved operations to increase instruction-level parallelism
+//
+
+.version 6.0
+.target sm_50
+.address_size 64
+
+.visible .entry ilp_optimized(
+    .param .u64 input_ptr,
+    .param .u64 output_ptr,
+    .param .u32 n
+) {
+    .reg .u32 %tid;
+    .reg .u32 %n_val;
+    .reg .u64 %input_addr, %output_addr;
+    .reg .u64 %input_idx_addr, %output_idx_addr;
+    .reg .pred %cond;
+    .reg .f32 %value1, %value2, %value3, %value4;
+    .reg .f32 %temp1, %temp2, %temp3, %temp4;
+    
+    // Get thread ID
+    mov.u32 %tid, %tid.x;
+    
+    // Load parameters
+    ld.param.u32 %n_val, [n];
+    ld.param.u64 %input_addr, [input_ptr];
+    ld.param.u64 %output_addr, [output_ptr];
+    
+    // Calculate address for this thread
+    mul.wide.u32 %input_idx_addr, %tid, 4;  // 4 bytes per float
+    add.u64 %input_idx_addr, %input_addr, %input_idx_addr;
+    add.u64 %output_idx_addr, %output_addr, %input_idx_addr;
+    
+    // Bounds check
+    setp.lt.u32 %cond, %tid, %n_val;
+    
+    // Load value from input
+    @%cond ld.global.f32 %value1, [%input_idx_addr];
+    
+    // Duplicate value for parallel processing
+    mov.f32 %value2, %value1;
+    mov.f32 %value3, %value1;
+    mov.f32 %value4, %value1;
+    
+    // Interleaved operations to increase ILP
+    // Pipeline the computations
+    add.f32 %temp1, %value1, 1.0;
+    add.f32 %temp2, %value2, 2.0;
+    add.f32 %temp3, %value3, 3.0;
+    add.f32 %temp4, %value4, 4.0;
+    
+    mul.f32 %temp1, %temp1, 2.0;
+    mul.f32 %temp2, %temp2, 3.0;
+    mul.f32 %temp3, %temp3, 4.0;
+    mul.f32 %temp4, %temp4, 5.0;
+    
+    sub.f32 %temp1, %temp1, 1.0;
+    sub.f32 %temp2, %temp2, 2.0;
+    sub.f32 %temp3, %temp3, 3.0;
+    sub.f32 %temp4, %temp4, 4.0;
+    
+    div.rn.f32 %temp1, %temp1, 2.0;
+    div.rn.f32 %temp2, %temp2, 3.0;
+    div.rn.f32 %temp3, %temp3, 4.0;
+    div.rn.f32 %temp4, %temp4, 5.0;
+    
+    // Combine results
+    add.f32 %value1, %temp1, %temp2;
+    add.f32 %value2, %temp3, %temp4;
+    add.f32 %value1, %value1, %value2;
+    
+    // Store result
+    @%cond st.global.f32 [%output_idx_addr], %value1;
+    
+    ret;
+}

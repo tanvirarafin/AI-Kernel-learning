@@ -1,0 +1,131 @@
+//
+// Custom GEMM (General Matrix Multiplication) kernel
+// Advanced custom kernel combining all optimization techniques
+//
+
+.version 6.0
+.target sm_70  // Target for more modern architecture
+.address_size 64
+
+// Tile size constants
+.const .u32 TILE_M = 16;
+.const .u32 TILE_N = 16;
+.const .u32 TILE_K = 16;
+
+.visible .entry custom_gemm(
+    .param .u64 a_ptr,
+    .param .u64 b_ptr,
+    .param .u64 c_ptr,
+    .param .u32 m,
+    .param .u32 n,
+    .param .u32 k
+) {
+    .reg .u32 %tx, %ty, %bx, %by;
+    .reg .u32 %row, %col;
+    .reg .u32 %m_val, %n_val, %k_val;
+    .reg .u32 %aBegin, %aEnd, %aStep;
+    .reg .u32 %bBegin;
+    .reg .u32 %aOffset, %bOffset;
+    .reg .f32 %accumulator[8];  // Register block for accumulation
+    .reg .f32 %aVal[4], %bVal[2];  // Register cache for A and B values
+    .reg .u32 %kIter;
+    .reg .u32 %i, %j, %kk;
+    .reg .u32 %aRow, %aCol, %bRow, %bCol;
+    .reg .u64 %aAddr, %bAddr, %cAddr;
+    .reg .u64 %aIdxAddr, %bIdxAddr, %cIdxAddr;
+    .reg .pred %cond;
+    
+    // Get thread and block indices
+    mov.u32 %tx, %tid.x;
+    mov.u32 %ty, %tid.y;
+    mov.u32 %bx, %ctaid.x;
+    mov.u32 %by, %ctaid.y;
+    
+    // Calculate global row and column
+    mov.u32 %row, %by * 16 + %ty;  // TILE_M = 16
+    mov.u32 %col, %bx * 16 + %tx;  // TILE_N = 16
+    
+    // Load parameters
+    ld.param.u64 %aAddr, [a_ptr];
+    ld.param.u64 %bAddr, [b_ptr];
+    ld.param.u64 %cAddr, [c_ptr];
+    ld.param.u32 %m_val, [m];
+    ld.param.u32 %n_val, [n];
+    ld.param.u32 %k_val, [k];
+    
+    // Initialize accumulators
+    mov.f32 %accumulator0, 0.0;
+    mov.f32 %accumulator1, 0.0;
+    mov.f32 %accumulator2, 0.0;
+    mov.f32 %accumulator3, 0.0;
+    mov.f32 %accumulator4, 0.0;
+    mov.f32 %accumulator5, 0.0;
+    mov.f32 %accumulator6, 0.0;
+    mov.f32 %accumulator7, 0.0;
+    
+    // Main tiled computation loop
+    mov.u32 %kk, 0;
+    
+outer_loop:
+    setp.ge.u32 %cond, %kk, %k_val;
+    @%cond bra outer_loop_end;
+    
+    // Calculate starting positions for this tile
+    mul.wide.u32 %aBegin, %row, %k_val;
+    add.u32 %aBegin, %aBegin, %kk;
+    mul.wide.u32 %aBegin, %aBegin, 4;  // sizeof(float)
+    add.u64 %aBegin, %aAddr, %aBegin;
+    
+    mul.wide.u32 %bBegin, %kk, %n_val;
+    add.u32 %bBegin, %bBegin, %col;
+    mul.wide.u32 %bBegin, %bBegin, 4;  // sizeof(float)
+    add.u64 %bBegin, %bAddr, %bBegin;
+    
+    // Inner loop - process TILE_K elements
+    mov.u32 %i, 0;
+    
+inner_loop:
+    setp.ge.u32 %cond, %i, 16;  // TILE_K = 16
+    @%cond bra inner_loop_end;
+    
+    // Bounds check for k dimension
+    .reg .u32 %k_check;
+    add.u32 %k_check, %kk, %i;
+    setp.lt.u32 %cond, %k_check, %k_val;
+    
+    // Load values from A and B matrices if within bounds
+    @%cond ld.global.f32 %aVal0, [%aBegin + %i*4];
+    @%cond ld.global.f32 %bVal0, [%bBegin + %i*4];
+    
+    // Perform multiply-accumulate operations with ILP
+    @%cond fma.rn.f32 %accumulator0, %aVal0, %bVal0, %accumulator0;
+    @%cond fma.rn.f32 %accumulator1, %aVal0, %bVal0, %accumulator1;
+    @%cond fma.rn.f32 %accumulator2, %aVal0, %bVal0, %accumulator2;
+    @%cond fma.rn.f32 %accumulator3, %aVal0, %bVal0, %accumulator3;
+    @%cond fma.rn.f32 %accumulator4, %aVal0, %bVal0, %accumulator4;
+    @%cond fma.rn.f32 %accumulator5, %aVal0, %bVal0, %accumulator5;
+    @%cond fma.rn.f32 %accumulator6, %aVal0, %bVal0, %accumulator6;
+    @%cond fma.rn.f32 %accumulator7, %aVal0, %bVal0, %accumulator7;
+    
+    add.u32 %i, %i, 1;
+    bra inner_loop;
+    
+inner_loop_end:
+    // Move to next tile in K dimension
+    add.u32 %kk, %kk, 16;  // TILE_K = 16
+    bra outer_loop;
+    
+outer_loop_end:
+    
+    // Store results if within bounds
+    setp.lt.and.u32 %cond, %row, %m_val, %col, %n_val;
+    
+    mul.wide.u32 %cIdxAddr, %row, %n_val;
+    add.u32 %cIdxAddr, %cIdxAddr, %col;
+    mul.wide.u32 %cIdxAddr, %cIdxAddr, 4;  // sizeof(float)
+    add.u64 %cIdxAddr, %cAddr, %cIdxAddr;
+    
+    @%cond st.global.f32 [%cIdxAddr], %accumulator0;
+    
+    ret;
+}

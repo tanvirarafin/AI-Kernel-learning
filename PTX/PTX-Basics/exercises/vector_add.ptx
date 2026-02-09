@@ -1,0 +1,48 @@
+//
+// Vector addition kernel in PTX
+// Adds two float vectors element-wise
+//
+
+.version 6.0
+.target sm_50
+.address_size 64
+
+.visible .entry vector_add(
+    .param .u64 a_ptr,
+    .param .u64 b_ptr,
+    .param .u64 c_ptr, 
+    .param .u32 n
+) {
+    .reg .u32 %tid;
+    .reg .u32 %n_val;
+    .reg .u64 %a_addr, %b_addr, %c_addr;
+    .reg .u64 %a_idx_addr, %b_idx_addr, %c_idx_addr;
+    .reg .f32 %a_val, %b_val, %c_val;
+    .reg .pred %cond;
+    
+    // Get thread ID
+    mov.u32 %tid, %tid.x;
+    
+    // Load parameters
+    ld.param.u64 %a_addr, [a_ptr];
+    ld.param.u64 %b_addr, [b_ptr];
+    ld.param.u64 %c_addr, [c_ptr];
+    ld.param.u32 %n_val, [n];
+    
+    // Calculate address for this thread
+    mul.wide.u32 %a_idx_addr, %tid, 4;  // 4 bytes per float
+    add.u64 %a_idx_addr, %a_addr, %a_idx_addr;
+    add.u64 %b_idx_addr, %b_addr, %a_idx_addr;
+    add.u64 %c_idx_addr, %c_addr, %a_idx_addr;
+    
+    // Bounds check
+    setp.lt.u32 %cond, %tid, %n_val;
+    
+    // Perform addition if within bounds
+    @%cond ld.f32 %a_val, [%a_idx_addr];
+    @%cond ld.f32 %b_val, [%b_idx_addr];
+    @%cond add.f32 %c_val, %a_val, %b_val;
+    @%cond st.f32 [%c_idx_addr], %c_val;
+    
+    ret;
+}

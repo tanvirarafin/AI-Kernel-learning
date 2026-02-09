@@ -1,0 +1,32 @@
+//
+// Simple addition kernel in PTX
+// This kernel adds two integers and stores the result
+//
+
+.version 6.0
+.target sm_50
+.address_size 64
+
+.visible .entry add_simple(
+    .param .u32 a,
+    .param .u32 b, 
+    .param .u32* result
+) {
+    .reg .u32 %a1, %b1, %sum;
+    .reg .u64 %result_ptr;
+    
+    // Load parameters
+    ld.param.u32 %a1, [a];
+    ld.param.u32 %b1, [b];
+    
+    // Perform addition
+    add.u32 %sum, %a1, %b1;
+    
+    // Load pointer to result
+    ld.param.u64 %result_ptr, [result];
+    
+    // Store result
+    st.u32 [%result_ptr], %sum;
+    
+    ret;
+}

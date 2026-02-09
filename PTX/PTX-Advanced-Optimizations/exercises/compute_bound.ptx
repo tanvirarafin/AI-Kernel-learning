@@ -1,0 +1,55 @@
+//
+// Compute-bound kernel with low arithmetic intensity
+// Demonstrates serial computation that could benefit from ILP
+//
+
+.version 6.0
+.target sm_50
+.address_size 64
+
+.visible .entry compute_bound(
+    .param .u64 input_ptr,
+    .param .u64 output_ptr,
+    .param .u32 n
+) {
+    .reg .u32 %tid;
+    .reg .u32 %n_val;
+    .reg .u64 %input_addr, %output_addr;
+    .reg .u64 %input_idx_addr, %output_idx_addr;
+    .reg .pred %cond;
+    .reg .f32 %value;
+    
+    // Get thread ID
+    mov.u32 %tid, %tid.x;
+    
+    // Load parameters
+    ld.param.u32 %n_val, [n];
+    ld.param.u64 %input_addr, [input_ptr];
+    ld.param.u64 %output_addr, [output_ptr];
+    
+    // Calculate address for this thread
+    mul.wide.u32 %input_idx_addr, %tid, 4;  // 4 bytes per float
+    add.u64 %input_idx_addr, %input_addr, %input_idx_addr;
+    add.u64 %output_idx_addr, %output_addr, %input_idx_addr;
+    
+    // Bounds check
+    setp.lt.u32 %cond, %tid, %n_val;
+    
+    // Load value from input
+    @%cond ld.global.f32 %value, [%input_idx_addr];
+    
+    // Serial computation - could benefit from ILP
+    add.f32 %value, %value, 1.0;
+    mul.f32 %value, %value, 2.0;
+    sub.f32 %value, %value, 1.0;
+    div.rn.f32 %value, %value, 2.0;
+    add.f32 %value, %value, 3.0;
+    mul.f32 %value, %value, 4.0;
+    sub.f32 %value, %value, 5.0;
+    div.rn.f32 %value, %value, 6.0;
+    
+    // Store result
+    @%cond st.global.f32 [%output_idx_addr], %value;
+    
+    ret;
+}
