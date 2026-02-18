@@ -92,6 +92,32 @@ A curated list of resources for GPU programming, concurrency, and NVIDIA librari
 
 ---
 
-## Notes / TODO
-- Consider adding Triton, Tensor Cores, and profiling resources (Nsight Compute / Nsight Systems) to expand the list.  
-- Rename file to `learning_material.md` if you prefer the corrected spelling.
+## Additional Resources — Triton, Nsight, and Tensor Cores
+
+### Triton (OpenAI)
+- Triton documentation and getting started:
+  - https://triton-lang.org/  
+  - https://triton-lang.org/getting-started/  
+  - Notes: Triton provides a Python-first block programming model for custom high-performance GPU kernels. Look into `@triton.autotune`, masking for boundary handling, and block-size choices (multiples of 32).
+
+### NVIDIA Nsight Tools
+- Nsight Compute (NCU) — kernel-level profiling and source counters:
+  - https://developer.nvidia.com/nsight-compute  
+  - Use to collect line-level metrics, memory throughput, occupancy, and warp-state statistics.
+
+- Nsight Systems (Nsys) — system-level timeline profiling:
+  - https://developer.nvidia.com/nsight-systems  
+  - Use to analyze CPU/GPU interaction, kernel launch overhead, streams, and concurrency across the full application timeline.
+
+### Tensor Cores / WMMA
+- NVIDIA Tensor Cores overview and best practices:
+  - https://developer.nvidia.com/tensor-cores  
+- CUTLASS WMMA and Tensor Core examples:
+  - https://github.com/NVIDIA/cutlass (see example GEMMs and WMMA-based kernels)
+
+### Quick usage tips for these resources
+- Use Triton for rapid kernel iteration and fusion-heavy workloads when a Python workflow is preferred. Autotune different block configurations and compare with CUDA/CUTLASS baselines.
+- Profile early and often: run Nsight Compute to identify hot kernels and memory inefficiencies, then Nsight Systems to diagnose application-level stalls and CPU-GPU bottlenecks.
+- When targeting Tensor Cores, ensure shapes and data layouts match the requirements (e.g., multiples of 16/32 as appropriate) and validate numerical correctness against FP32 baselines.
+
+- File rename note (done): the file has been renamed to `learning_material.md`.
