@@ -2,9 +2,58 @@
 
 Progressive exercises to test and deepen your CUDA understanding.
 
+## 🎯 How to Use
+
+1. **Start with worked examples** in each lesson directory (e.g., `01_basics/01_hello_cuda.cu`)
+2. **Try the exercises** (files starting with `04_exercises_` or `01_exercises_`)
+3. **Check solutions** in `solutions/` directory if stuck
+4. **Compile**: `nvcc -o ex <file>.cu && ./ex`
+
 ---
 
-## Level 1: Basics
+## 📝 Completed Exercises
+
+### Level 1: Basics ✓
+
+| Exercise | File | Topics |
+|----------|------|--------|
+| 1.4 | `01_basics/04_exercises_vector_ops.cu` | Vector subtraction, multiplication, scaling, SAXPY |
+| 1.5 | `01_basics/05_exercises_thread_indexing.cu` | 2D/3D indexing, grid-stride loop, diagonal extraction |
+
+### Level 2: Memory Model ✓
+
+| Exercise | File | Topics |
+|----------|------|--------|
+| 2.1 | `02_memory_model/01_exercises_memory_coalescing.cu` | Coalesced access, AoS vs SoA, transpose, constant memory |
+
+### Level 3: Shared Memory ✓
+
+| Exercise | File | Topics |
+|----------|------|--------|
+| 3.1 | `03_shared_memory/01_exercises_shared_memory_basics.cu` | Neighbor access, reduction, reverse, histogram, sliding window |
+
+### Level 4: Synchronization ✓
+
+| Exercise | File | Topics |
+|----------|------|--------|
+| 4.1 | `04_synchronization/01_exercises_sync_atomics.cu` | Barriers, atomic ops, spinlock, warp shuffle, parallel scan |
+
+### Level 5: Optimization ✓
+
+| Exercise | File | Topics |
+|----------|------|--------|
+| 5.1 | `05_optimization/01_exercises_occupancy_tuning.cu` | Register usage, occupancy API, block size tuning |
+
+### Level 6: Advanced ✓
+
+| Exercise | File | Topics |
+|----------|------|--------|
+| 6.1 | `06_advanced/01_exercises_cuda_streams.cu` | Stream creation, async transfers, dependencies, priorities |
+| 6.2 | `06_advanced/02_exercises_unified_memory.cu` | cudaMallocManaged, prefetching, memory advice |
+
+---
+
+## Legacy Exercise Descriptions
 
 ### Exercise 1.1: Vector Operations
 Implement the following kernels:
@@ -12,16 +61,22 @@ Implement the following kernels:
 2. Element-wise multiplication: `C[i] = A[i] * B[i]`
 3. Vector scaling: `C[i] = alpha * A[i]`
 
+**✓ Completed in**: `01_basics/04_exercises_vector_ops.cu`
+
 ### Exercise 1.2: Indexing Challenge
 Write a kernel that processes a 2D image (width × height):
 - Use 2D grid and 2D blocks
 - Each thread sets pixel value to: `pixel[x,y] = x + y`
 - Verify the output matches expected pattern
 
+**✓ Completed in**: `01_basics/05_exercises_thread_indexing.cu`
+
 ### Exercise 1.3: Grid-Stride Loop
 Modify the vector addition to use grid-stride loop:
 - Handle arrays larger than total thread count
 - Test with array size = 10× total threads
+
+**✓ Completed in**: `01_basics/04_exercises_vector_ops.cu` (Bonus)
 
 ---
 
